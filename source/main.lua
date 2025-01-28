@@ -8,6 +8,7 @@ local gfx = pd.graphics
  local playerImage = gfx.image.new("images/capybara")
 
 function pd.update()
+    gfx.clear()
     local crankPosition = pd.getCrankPosition()
     if crankPosition > 90 or crankPosition > 270 then
         playerY -= playerSpeed
