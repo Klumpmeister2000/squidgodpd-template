@@ -10,9 +10,9 @@ local gfx = pd.graphics
 function pd.update()
     local crankPosition = pd.getCrankPosition()
     if crankPosition > 90 or crankPosition > 270 then
-        playerY = playerY - playerSpeed
+        playerY -= playerSpeed
     else 
-        playerY = playerY + playerSpeed
+        playerY += playerSpeed
     end
     playerImage:draw(playerX, playerY)
 end
