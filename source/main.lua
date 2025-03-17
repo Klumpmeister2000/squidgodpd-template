@@ -9,9 +9,9 @@ local playerImage = gfx.image.new("images/capybara")
 
 -- Buttons
 local buttons = {
-    {x = 60, y = 200, width = 50, height = 30, selected = false},
-    {x = 120, y = 200, width = 50, height = 30, selected = false},
-    {x = 180, y = 200, width = 50, height = 30, selected = false}
+    {x = 60, y = 200, width = 100, height = 30, selected = false, text = "Rock"},
+    {x = 120, y = 200, width = 100, height = 30, selected = false, text = "Paper"},
+    {x = 180, y = 200, width = 100, height = 30, selected = false, text = "Scissors"}
 }
 local currentButtonIndex = 1
 
@@ -48,8 +48,12 @@ function pd.update()
         else
             gfx.setColor(gfx.kColorWhite)
         end
-        gfx.fillRect(button.x, button.y, button.width, button.height)
+        gfx.fillRoundRect(button.x, button.y, button.width, button.height, 5)
         gfx.setColor(gfx.kColorBlack)
-        gfx.drawRect(button.x, button.y, button.width, button.height)
+        gfx.drawRoundRect(button.x, button.y, button.width, button.height, 5)
+        
+        -- Draw button text
+        local textWidth, textHeight = gfx.getTextSize(button.text)
+        gfx.drawText(button.text, button.x + (button.width - textWidth) / 2, button.y + (button.height - textHeight) / 2)
     end
 end
