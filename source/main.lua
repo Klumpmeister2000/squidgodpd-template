@@ -4,7 +4,7 @@ local pd = playdate
 local gfx = pd.graphics
 
 -- Game state
-local gameState = "title" -- Possible states: "title", "game"
+local gameState = "title" -- Possible states: "title", "game", "end"
 
 -- Player 
 local playerX = 40
@@ -31,7 +31,7 @@ function pd.update()
         if pd.buttonJustPressed(pd.kButtonA) then
             gameState = "game"
         elseif pd.buttonJustPressed(pd.kButtonB) then
-            pd.system.exit() -- Quit the game
+            gameState = "end"
         end
     elseif gameState == "game" then
         -- Main game update
@@ -73,5 +73,8 @@ function pd.update()
             local textWidth, textHeight = gfx.getTextSize(button.text)
             gfx.drawText(button.text, button.x + (button.width - textWidth) / 2, button.y + (button.height - textHeight) / 2)
         end
+    elseif gameState == "end" then
+        -- End screen update
+        gfx.drawText("Thanks for playing!", 100, 120)
     end
 end
