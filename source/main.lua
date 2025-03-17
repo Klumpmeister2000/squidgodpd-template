@@ -73,6 +73,10 @@ function pd.update()
             end
         end
     elseif gameState == "collision" then
+        -- Display player and enemy sprites
+        playerImage:draw(60, 100) -- Left center
+        enemyImage:draw(240, 100) -- Right center
+        
         -- Display buttons
         for i, button in ipairs(buttons) do
             if button.selected then
