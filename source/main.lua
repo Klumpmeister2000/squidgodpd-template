@@ -9,9 +9,9 @@ local playerImage = gfx.image.new("images/capybara")
 
 -- Buttons
 local buttons = {
-    {x = 60, y = 200, width = 100, height = 30, selected = false, text = "Rock"},
-    {x = 120, y = 200, width = 100, height = 30, selected = false, text = "Paper"},
-    {x = 180, y = 200, width = 100, height = 30, selected = false, text = "Scissors"}
+    {x = 40, y = 200, width = 100, height = 30, selected = false, text = "Rock"},
+    {x = 150, y = 200, width = 100, height = 30, selected = false, text = "Paper"},
+    {x = 260, y = 200, width = 100, height = 30, selected = false, text = "Scissors"}
 }
 local currentButtonIndex = 1
 
