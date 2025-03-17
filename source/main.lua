@@ -1,10 +1,15 @@
+import "CoreLibs/object"
+import "CoreLibs/graphics"
+import "CoreLibs/sprites"
+import "CoreLibs/timer"
+
 import "title"
 
 local pd = playdate
 local gfx = pd.graphics
 
 -- Game state
-local gameState = "title" -- Possible states: "title", "game", "collision", "end"
+local gameState = "title" -- Possible states: "title", "game", "collision", "result", "retry", "end"
 
 -- Player 
 local playerX = 40
@@ -19,12 +24,17 @@ local enemySpeed = 2
 local numEnemies = 5
 
 -- Initialize enemies
-for i = 1, numEnemies do
-    table.insert(enemies, {
-        x = 400 + math.random(0, 200),
-        y = math.random(0, 240)
-    })
+local function initializeEnemies()
+    enemies = {}
+    for i = 1, numEnemies do
+        table.insert(enemies, {
+            x = 400 + math.random(0, 200),
+            y = math.random(0, 240)
+        })
+    end
 end
+
+initializeEnemies()
 
 -- Buttons
 local buttons = {
@@ -33,6 +43,9 @@ local buttons = {
     {x = 260, y = 200, width = 100, height = 30, selected = false, text = "Scissors"}
 }
 local currentButtonIndex = 1
+local playerChoice = nil
+local enemyChoice = nil
+local resultText = ""
 
 function pd.update()
     gfx.clear()
@@ -88,6 +101,13 @@ function pd.update()
             gfx.setColor(gfx.kColorBlack)
             gfx.drawRoundRect(button.x, button.y, button.width, button.height, 5)
             
+            -- Draw thicker border for the selected button
+            if i == currentButtonIndex then
+                gfx.setLineWidth(3)
+                gfx.drawRoundRect(button.x - 2, button.y - 2, button.width + 4, button.height + 4, 5)
+                gfx.setLineWidth(1)
+            end
+            
             -- Draw button text
             local textWidth, textHeight = gfx.getTextSize(button.text)
             gfx.drawText(button.text, button.x + (button.width - textWidth) / 2, button.y + (button.height - textHeight) / 2)
@@ -100,11 +120,44 @@ function pd.update()
             currentButtonIndex = math.min(#buttons, currentButtonIndex + 1)
         end
         
-        -- Handle A and B button input for selection/deselection
+        -- Handle A button input for selection
         if pd.buttonJustPressed(pd.kButtonA) then
-            buttons[currentButtonIndex].selected = not buttons[currentButtonIndex].selected
-        elseif pd.buttonJustPressed(pd.kButtonB) then
-            buttons[currentButtonIndex].selected = false
+            playerChoice = currentButtonIndex
+            enemyChoice = math.random(1, #buttons)
+            gameState = "result"
+        end
+    elseif gameState == "result" then
+        -- Determine the winner
+        if playerChoice == enemyChoice then
+            resultText = "It's a tie!"
+            gameState = "collision"
+        elseif (playerChoice == 1 and enemyChoice == 3) or (playerChoice == 2 and enemyChoice == 1) or (playerChoice == 3 and enemyChoice == 2) then
+            resultText = "You win!"
+            gameState = "game"
+        else
+            resultText = "You lose! Press A to retry"
+            gameState = "retry"
+        end
+        
+        -- Display result
+        gfx.drawText(resultText, 100, 120)
+        
+        -- Wait for a moment before clearing the screen
+        pd.timer.performAfterDelay(2000, function()
+            if resultText == "You win!" then
+                gameState = "game"
+            elseif resultText == "You lose! Press A to retry" then
+                gameState = "retry"
+            end
+        end)
+    elseif gameState == "retry" then
+        -- Display retry message
+        gfx.drawText(resultText, 100, 120)
+        
+        -- Handle A button input to retry
+        if pd.buttonJustPressed(pd.kButtonA) then
+            initializeEnemies()
+            gameState = "game"
         end
     elseif gameState == "end" then
         -- End screen update
