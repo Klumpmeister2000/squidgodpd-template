@@ -4,13 +4,27 @@ local pd = playdate
 local gfx = pd.graphics
 
 -- Game state
-local gameState = "title" -- Possible states: "title", "game", "end"
+local gameState = "title" -- Possible states: "title", "game", "collision", "end"
 
 -- Player 
 local playerX = 40
 local playerY = 120
 local playerSpeed = 3
 local playerImage = gfx.image.new("images/capybara")
+
+-- Enemies
+local enemyImage = gfx.image.new("images/rock")
+local enemies = {}
+local enemySpeed = 2
+local numEnemies = 5
+
+-- Initialize enemies
+for i = 1, numEnemies do
+    table.insert(enemies, {
+        x = 400 + math.random(0, 200),
+        y = math.random(0, 240)
+    })
+end
 
 -- Buttons
 local buttons = {
@@ -44,21 +58,22 @@ function pd.update()
         end
         playerImage:draw(playerX, playerY)
         
-        -- Handle d-pad input for button selection
-        if pd.buttonJustPressed(pd.kButtonLeft) then
-            currentButtonIndex = math.max(1, currentButtonIndex - 1)
-        elseif pd.buttonJustPressed(pd.kButtonRight) then
-            currentButtonIndex = math.min(#buttons, currentButtonIndex + 1)
+        -- Update enemy positions
+        for _, enemy in ipairs(enemies) do
+            enemy.x -= enemySpeed
+            if enemy.x < -enemyImage.width then
+                enemy.x = 400 + math.random(0, 200)
+                enemy.y = math.random(0, 240)
+            end
+            enemyImage:draw(enemy.x, enemy.y)
+            
+            -- Check for collision with player
+            if math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
+                gameState = "collision"
+            end
         end
-        
-        -- Handle A and B button input for selection/deselection
-        if pd.buttonJustPressed(pd.kButtonA) then
-            buttons[currentButtonIndex].selected = not buttons[currentButtonIndex].selected
-        elseif pd.buttonJustPressed(pd.kButtonB) then
-            buttons[currentButtonIndex].selected = false
-        end
-        
-        -- Draw buttons
+    elseif gameState == "collision" then
+        -- Display buttons
         for i, button in ipairs(buttons) do
             if button.selected then
                 gfx.setColor(gfx.kColorBlack)
@@ -72,6 +87,20 @@ function pd.update()
             -- Draw button text
             local textWidth, textHeight = gfx.getTextSize(button.text)
             gfx.drawText(button.text, button.x + (button.width - textWidth) / 2, button.y + (button.height - textHeight) / 2)
+        end
+        
+        -- Handle d-pad input for button selection
+        if pd.buttonJustPressed(pd.kButtonLeft) then
+            currentButtonIndex = math.max(1, currentButtonIndex - 1)
+        elseif pd.buttonJustPressed(pd.kButtonRight) then
+            currentButtonIndex = math.min(#buttons, currentButtonIndex + 1)
+        end
+        
+        -- Handle A and B button input for selection/deselection
+        if pd.buttonJustPressed(pd.kButtonA) then
+            buttons[currentButtonIndex].selected = not buttons[currentButtonIndex].selected
+        elseif pd.buttonJustPressed(pd.kButtonB) then
+            buttons[currentButtonIndex].selected = false
         end
     elseif gameState == "end" then
         -- End screen update
