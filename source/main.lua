@@ -3,49 +3,25 @@ import "CoreLibs/graphics"
 import "CoreLibs/sprites"
 import "CoreLibs/timer"
 
-import "title"
-
 local pd = playdate
 local gfx = pd.graphics
 
 -- Game state
-local gameState = "title" -- Possible states: "title", "game", "collision", "result", "retry", "end"
+local gameState = "title" -- Start with the title screen
 
--- Player 
-local playerX = 40
-local playerY = 120
-local playerSpeed = 3
-local playerImage = gfx.image.new("images/capybara")
+-- Player variables
+local playerX = 40 -- Initial X position of the player
+local playerY = 120 -- Initial Y position of the player
+local playerSpeed = 3 -- Speed at which the player moves
+local playerImage = gfx.image.new("images/capybara") -- Load the player image
 
--- Enemies
-local enemyImage = gfx.image.new("images/rock")
-local enemies = {}
-local enemySpeed = 2
-local numEnemies = 5
-
--- Initialize enemies
-local function initializeEnemies()
-    enemies = {}
-    for i = 1, numEnemies do
-        table.insert(enemies, {
-            x = 400 + math.random(0, 200),
-            y = math.random(0, 240)
-        })
-    end
+-- Define the titleUpdate function
+function titleUpdate()
+    gfx.clear() -- Clear the screen
+    gfx.drawText("Welcome to the Game!", 100, 100) -- Title text
+    gfx.drawText("Press A to Start", 100, 140) -- Instruction text
+    gfx.drawText("Press B to Quit", 100, 160) -- Instruction text
 end
-
-initializeEnemies()
-
--- Buttons
-local buttons = {
-    {x = 40, y = 200, width = 100, height = 30, selected = false, text = "Rock"},
-    {x = 150, y = 200, width = 100, height = 30, selected = false, text = "Paper"},
-    {x = 260, y = 200, width = 100, height = 30, selected = false, text = "Scissors"}
-}
-local currentButtonIndex = 1
-local playerChoice = nil
-local enemyChoice = nil
-local resultText = ""
 
 function pd.update()
     gfx.clear()
@@ -69,7 +45,7 @@ function pd.update()
         else 
             playerY += playerSpeed
         end
-        playerImage:draw(playerX, playerY)
+        playerImage:draw(playerX, playerY) -- Draw the player image
         
         -- Update enemy positions
         for _, enemy in ipairs(enemies) do
@@ -133,7 +109,8 @@ function pd.update()
             gameState = "collision"
         elseif (playerChoice == 1 and enemyChoice == 3) or (playerChoice == 2 and enemyChoice == 1) or (playerChoice == 3 and enemyChoice == 2) then
             resultText = "You win!"
-            gameState = "game"
+            initializeEnemies() -- Reinitialize enemies
+            gameState = "game" -- Return to the game loop
         else
             resultText = "You lose! Press A to retry"
             gameState = "retry"
@@ -141,15 +118,6 @@ function pd.update()
         
         -- Display result
         gfx.drawText(resultText, 100, 120)
-        
-        -- Wait for a moment before clearing the screen
-        pd.timer.performAfterDelay(2000, function()
-            if resultText == "You win!" then
-                gameState = "game"
-            elseif resultText == "You lose! Press A to retry" then
-                gameState = "retry"
-            end
-        end)
     elseif gameState == "retry" then
         -- Display retry message
         gfx.drawText(resultText, 100, 120)
