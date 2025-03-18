@@ -15,15 +15,15 @@ local playerY = 120
 local playerSpeed = 3
 
 -- Load player image
-local playerImage = gfx.image.new("images/capybara.png")
+local playerImage = gfx.image.new("images/spaceman.png")
 if not playerImage then
-    error("Failed to load player image: images/capybara.png")
+    error("Failed to load player image: images/spaceman.png")
 end
 
 -- Load enemy image
-local enemyImage = gfx.image.new("images/rock.png")
+local enemyImage = gfx.image.new("images/spaceworm.png")
 if not enemyImage then
-    error("Failed to load enemy image: images/rock.png")
+    error("Failed to load enemy image: images/spaceworm.png")
 end
 
 -- Enemies
