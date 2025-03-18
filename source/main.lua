@@ -123,37 +123,37 @@ function pd.update()
             playerImage:draw(playerX, playerY)
         end
 
-        -- Update enemy positions
-        for enemyIndex = #enemies, 1, -1 do
-            local enemy = enemies[enemyIndex]
-            enemy.x -= enemySpeed
-            if enemyImage ~= nil and enemy.x < -enemyImage.width then
-                enemy.x = 400 + math.random(0, 200)
-                enemy.y = math.random(0, 240)
-            end
-            if enemyImage ~= nil then
-                enemyImage:draw(enemy.x, enemy.y)
-            end
+    -- Update enemy positions
+    for enemyIndex = #enemies, 1, -1 do
+    local enemy = enemies[enemyIndex]
+    enemy.x -= enemySpeed
+    if enemyImage ~= nil and enemy.x < -enemyImage.width then
+        enemy.x = 400 + math.random(0, 200)
+        enemy.y = math.random(0, 240)
+    end
+    if enemyImage ~= nil then
+        enemyImage:draw(enemy.x, enemy.y)
+    end
 
-            -- Check for collision with bullets
-            for bulletIndex = #bullets, 1, -1 do
-                local bullet = bullets[bulletIndex]
-                if enemyImage ~= nil and math.abs(bullet.x - enemy.x) < enemyImage.width / 2 and math.abs(bullet.y - enemy.y) < enemyImage.height / 2 then
-                    -- Remove the bullet and the enemy
-                    table.remove(bullets, bulletIndex)
-                    table.remove(enemies, enemyIndex)
+    -- Check for collision with bullets
+    for bulletIndex = #bullets, 1, -1 do
+        local bullet = bullets[bulletIndex]
+        if math.abs(bullet.x - enemy.x) < 64 / 2 and math.abs(bullet.y - enemy.y) < 64 / 2 then
+            -- Remove the bullet and the enemy
+            table.remove(bullets, bulletIndex)
+            table.remove(enemies, enemyIndex)
 
-                    -- Increment the score
-                    score += 1
-                    break
-                end
-            end
-
-            -- Check for collision with player
-            if enemyImage ~= nil and math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
-                gameState = "collision"
-            end
+            -- Increment the score
+            score += 1
+            break
         end
+    end
+
+    -- Check for collision with player
+    if enemyImage ~= nil and math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
+        gameState = "collision"
+    end
+end
 
         -- Display the score
         gfx.drawText("Score: " .. score, 300, 10)
@@ -219,5 +219,7 @@ elseif gameState == "result" then
         gameState = "retry"
     end
 
-    -- Display result
-    gfx.drawText(resultText, 100, 120)
+        -- Display result
+            gfx.drawText(resultText, 100, 120)
+        end -- Close elseif gameState == "result" block
+    end -- Close pd.update function
