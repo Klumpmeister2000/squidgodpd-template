@@ -14,6 +14,13 @@ local playerX = 40
 local playerY = 120
 local playerSpeed = 3
 
+-- Score
+local score = 0
+
+-- Bullets
+local bullets = {}
+local bulletSpeed = 5
+
 -- Load player image
 local playerImage = gfx.image.new("images/spaceman.png")
 if not playerImage then
@@ -63,6 +70,13 @@ local function titleUpdate()
     gfx.drawText("Press B to Quit", 100, 160)
 end
 
+-- Score
+local score = 0
+
+-- Bullets
+local bullets = {}
+local bulletSpeed = 5
+
 function pd.update()
     gfx.clear()
     
@@ -84,14 +98,33 @@ function pd.update()
         elseif pd.buttonIsPressed(pd.kButtonDown) then
             playerY += playerSpeed -- Move down
         end
-    
+
+        -- Shoot a bullet when A is pressed
+        if pd.buttonJustPressed(pd.kButtonA) then
+            table.insert(bullets, {x = playerX + 20, y = playerY + 10}) -- Spawn bullet near the player
+        end
+
+        -- Update and draw bullets
+        for i = #bullets, 1, -1 do
+            local bullet = bullets[i]
+            bullet.x += bulletSpeed -- Move bullet to the right
+
+            -- Remove bullet if it goes off-screen
+            if bullet.x > 400 then
+                table.remove(bullets, i)
+            else
+                gfx.fillCircleAtPoint(bullet.x, bullet.y, 3) -- Draw bullet
+            end
+        end
+
         -- Draw the player
         if playerImage ~= nil then
             playerImage:draw(playerX, playerY)
         end
-    
+
         -- Update enemy positions
-        for _, enemy in ipairs(enemies) do
+        for enemyIndex = #enemies, 1, -1 do
+            local enemy = enemies[enemyIndex]
             enemy.x -= enemySpeed
             if enemyImage ~= nil and enemy.x < -enemyImage.width then
                 enemy.x = 400 + math.random(0, 200)
@@ -100,12 +133,29 @@ function pd.update()
             if enemyImage ~= nil then
                 enemyImage:draw(enemy.x, enemy.y)
             end
-    
+
+            -- Check for collision with bullets
+            for bulletIndex = #bullets, 1, -1 do
+                local bullet = bullets[bulletIndex]
+                if math.abs(bullet.x - enemy.x) < enemyImage.width / 2 and math.abs(bullet.y - enemy.y) < enemyImage.height / 2 then
+                    -- Remove the bullet and the enemy
+                    table.remove(bullets, bulletIndex)
+                    table.remove(enemies, enemyIndex)
+
+                    -- Increment the score
+                    score += 1
+                    break
+                end
+            end
+
             -- Check for collision with player
             if enemyImage ~= nil and math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
                 gameState = "collision"
             end
         end
+
+        -- Display the score
+        gfx.drawText("Score: " .. score, 300, 10)
     elseif gameState == "collision" then
         -- Display player and enemy sprites
         if playerImage ~= nil then
