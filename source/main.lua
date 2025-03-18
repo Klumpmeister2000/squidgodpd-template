@@ -53,10 +53,11 @@ initializeEnemies()
 
 -- Buttons
 local buttons = {
-    {x = 40, y = 200, width = 100, height = 30, selected = false, text = "Rock"},
-    {x = 150, y = 200, width = 100, height = 30, selected = false, text = "Paper"},
-    {x = 260, y = 200, width = 100, height = 30, selected = false, text = "Scissors"}
+    {x = 40, y = 200, width = 100, height = 30, selected = false, text = "Gun"},
+    {x = 150, y = 200, width = 100, height = 30, selected = false, text = "Sword"},
+    {x = 260, y = 200, width = 100, height = 30, selected = false, text = "Beam"}
 }
+
 local currentButtonIndex = 1
 local playerChoice = nil
 local enemyChoice = nil
@@ -201,32 +202,22 @@ function pd.update()
             enemyChoice = math.random(1, #buttons)
             gameState = "result"
         end
-    elseif gameState == "result" then
-        -- Determine the winner
-        if playerChoice == enemyChoice then
-            resultText = "It's a tie!"
-            gameState = "collision"
-        elseif (playerChoice == 1 and enemyChoice == 3) or (playerChoice == 2 and enemyChoice == 1) or (playerChoice == 3 and enemyChoice == 2) then
-            resultText = "You win!"
-            gameState = "game"
-        else
-            resultText = "You lose! Press A to retry"
-            gameState = "retry"
-        end
-        
-        -- Display result
-        gfx.drawText(resultText, 100, 120)
-    elseif gameState == "retry" then
-        -- Display retry message
-        gfx.drawText(resultText, 100, 120)
-        
-        -- Handle A button input to retry
-        if pd.buttonJustPressed(pd.kButtonA) then
-            initializeEnemies()
-            gameState = "game"
-        end
-    elseif gameState == "end" then
-        -- End screen update
-        gfx.drawText("Thanks for playing!", 100, 120)
+    -- Result logic
+elseif gameState == "result" then
+    -- Determine the winner
+    if playerChoice == enemyChoice then
+        resultText = "It's a tie!"
+        gameState = "collision"
+    elseif (playerChoice == 1 and enemyChoice == 2) or -- Gun beats Sword
+           (playerChoice == 2 and enemyChoice == 3) or -- Sword beats Beam
+           (playerChoice == 3 and enemyChoice == 1) then -- Beam beats Gun
+        resultText = "You win!"
+        initializeEnemies() -- Reinitialize enemies
+        gameState = "game"
+    else
+        resultText = "You lose! Press A to retry"
+        gameState = "retry"
     end
-end
+
+    -- Display result
+    gfx.drawText(resultText, 100, 120)
