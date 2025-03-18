@@ -231,4 +231,3 @@ elseif gameState == "result" then
         end
             end -- Close the pd.update function
         end -- Add missing end for pd.update
-    end -- Properly close the pd.update function
