@@ -137,7 +137,7 @@ function pd.update()
             -- Check for collision with bullets
             for bulletIndex = #bullets, 1, -1 do
                 local bullet = bullets[bulletIndex]
-                if math.abs(bullet.x - enemy.x) < enemyImage.width / 2 and math.abs(bullet.y - enemy.y) < enemyImage.height / 2 then
+                if enemyImage ~= nil and math.abs(bullet.x - enemy.x) < enemyImage.width / 2 and math.abs(bullet.y - enemy.y) < enemyImage.height / 2 then
                     -- Remove the bullet and the enemy
                     table.remove(bullets, bulletIndex)
                     table.remove(enemies, enemyIndex)
