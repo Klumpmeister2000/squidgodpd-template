@@ -78,17 +78,18 @@ function pd.update()
         end
     elseif gameState == "game" then
         -- Main game update
-        -- Handle crank position for player movement
-        local crankPosition = pd.getCrankPosition()
-        if crankPosition > 90 or crankPosition > 270 then
-            playerY -= playerSpeed
-        else 
-            playerY += playerSpeed
+        -- Handle d-pad input for player movement
+        if pd.buttonIsPressed(pd.kButtonUp) then
+            playerY -= playerSpeed -- Move up
+        elseif pd.buttonIsPressed(pd.kButtonDown) then
+            playerY += playerSpeed -- Move down
         end
+    
+        -- Draw the player
         if playerImage ~= nil then
             playerImage:draw(playerX, playerY)
         end
-        
+    
         -- Update enemy positions
         for _, enemy in ipairs(enemies) do
             enemy.x -= enemySpeed
@@ -99,7 +100,7 @@ function pd.update()
             if enemyImage ~= nil then
                 enemyImage:draw(enemy.x, enemy.y)
             end
-            
+    
             -- Check for collision with player
             if enemyImage ~= nil and math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
                 gameState = "collision"
