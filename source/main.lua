@@ -206,20 +206,29 @@ end
 elseif gameState == "result" then
     -- Determine the winner
     if playerChoice == enemyChoice then
-        resultText = "It's a tie!"
-        gameState = "collision"
+        resultText = "It's a tie! Press A to continue"
     elseif (playerChoice == 1 and enemyChoice == 2) or -- Gun beats Sword
            (playerChoice == 2 and enemyChoice == 3) or -- Sword beats Beam
            (playerChoice == 3 and enemyChoice == 1) then -- Beam beats Gun
-        resultText = "You win!"
-        initializeEnemies() -- Reinitialize enemies
-        gameState = "game"
+        resultText = "You win! Press A to continue"
     else
         resultText = "You lose! Press A to retry"
-        gameState = "retry"
     end
 
-        -- Display result
-            gfx.drawText(resultText, 100, 120)
-        end -- Close elseif gameState == "result" block
-    end -- Close pd.update function
+    -- Display result
+    gfx.drawText(resultText, 100, 120)
+
+        -- Wait for the player to press A to continue
+        if pd.buttonJustPressed(pd.kButtonA) then
+            if resultText == "You win! Press A to continue" then
+                initializeEnemies() -- Reinitialize enemies
+                gameState = "game" -- Return to the game loop
+            elseif resultText == "It's a tie! Press A to continue" then
+                gameState = "collision" -- Retry the collision screen
+            elseif resultText == "You lose! Press A to retry" then
+                gameState = "retry" -- Go to retry screen
+            end
+        end
+            end -- Close the pd.update function
+        end -- Add missing end for pd.update
+    end -- Properly close the pd.update function
