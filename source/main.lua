@@ -3,8 +3,6 @@ import "CoreLibs/graphics"
 import "CoreLibs/sprites"
 import "CoreLibs/timer"
 
-import "title"
-
 local pd = playdate
 local gfx = pd.graphics
 
@@ -15,10 +13,20 @@ local gameState = "title" -- Possible states: "title", "game", "collision", "res
 local playerX = 40
 local playerY = 120
 local playerSpeed = 3
-local playerImage = gfx.image.new("images/capybara")
+
+-- Load player image
+local playerImage = gfx.image.new("images/capybara.png")
+if not playerImage then
+    error("Failed to load player image: images/capybara.png")
+end
+
+-- Load enemy image
+local enemyImage = gfx.image.new("images/rock.png")
+if not enemyImage then
+    error("Failed to load enemy image: images/rock.png")
+end
 
 -- Enemies
-local enemyImage = gfx.image.new("images/rock")
 local enemies = {}
 local enemySpeed = 2
 local numEnemies = 5
@@ -47,6 +55,14 @@ local playerChoice = nil
 local enemyChoice = nil
 local resultText = ""
 
+-- Define the titleUpdate function
+function titleUpdate()
+    gfx.clear()
+    gfx.drawText("Welcome to the Game!", 100, 100)
+    gfx.drawText("Press A to Start", 100, 140)
+    gfx.drawText("Press B to Quit", 100, 160)
+end
+
 function pd.update()
     gfx.clear()
     
@@ -69,26 +85,34 @@ function pd.update()
         else 
             playerY += playerSpeed
         end
-        playerImage:draw(playerX, playerY)
+        if playerImage ~= nil then
+            playerImage:draw(playerX, playerY)
+        end
         
         -- Update enemy positions
         for _, enemy in ipairs(enemies) do
             enemy.x -= enemySpeed
-            if enemy.x < -enemyImage.width then
+            if enemyImage ~= nil and enemy.x < -enemyImage.width then
                 enemy.x = 400 + math.random(0, 200)
                 enemy.y = math.random(0, 240)
             end
-            enemyImage:draw(enemy.x, enemy.y)
+            if enemyImage ~= nil then
+                enemyImage:draw(enemy.x, enemy.y)
+            end
             
             -- Check for collision with player
-            if math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
+            if enemyImage ~= nil and math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
                 gameState = "collision"
             end
         end
     elseif gameState == "collision" then
         -- Display player and enemy sprites
-        playerImage:draw(60, 100) -- Left center
-        enemyImage:draw(240, 100) -- Right center
+        if playerImage ~= nil then
+            playerImage:draw(60, 100) -- Left center
+        end
+        if enemyImage ~= nil then
+            enemyImage:draw(240, 100) -- Right center
+        end
         
         -- Display buttons
         for i, button in ipairs(buttons) do
@@ -141,15 +165,6 @@ function pd.update()
         
         -- Display result
         gfx.drawText(resultText, 100, 120)
-        
-        -- Wait for a moment before clearing the screen
-        pd.timer.performAfterDelay(2000, function()
-            if resultText == "You win!" then
-                gameState = "game"
-            elseif resultText == "You lose! Press A to retry" then
-                gameState = "retry"
-            end
-        end)
     elseif gameState == "retry" then
         -- Display retry message
         gfx.drawText(resultText, 100, 120)

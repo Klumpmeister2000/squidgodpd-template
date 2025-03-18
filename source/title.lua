@@ -1,7 +1,7 @@
 local pd = playdate
 local gfx = pd.graphics
 
-function titleUpdate()
+local function titleUpdate()
     gfx.clear()
     
     -- Draw A button text
