@@ -56,7 +56,7 @@ local enemyChoice = nil
 local resultText = ""
 
 -- Define the titleUpdate function
-function titleUpdate()
+local function titleUpdate()
     gfx.clear()
     gfx.drawText("Welcome to the Game!", 100, 100)
     gfx.drawText("Press A to Start", 100, 140)
