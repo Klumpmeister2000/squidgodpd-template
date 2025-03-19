@@ -190,10 +190,10 @@ function pd.update()
 
         -- Display health bars as hearts
         for i = 1, playerHealth do
-            heartImage:draw(20 + (i - 1) * 20, 20) -- Draw player hearts
+            heartImage:drawScaled(20 + (i - 1) * 25, 20, 0.25) -- Player hearts
         end
         for i = 1, enemyHealth do
-            heartImage:draw(240 + (i - 1) * 20, 20) -- Draw enemy hearts
+            heartImage:drawScaled(240 + (i - 1) * 25, 20, 0.25) -- Enemy hearts
         end
 
         -- Display buttons
