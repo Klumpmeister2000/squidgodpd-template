@@ -37,7 +37,7 @@ local enemyHealth = 3
 local function initializeEnemies()
     enemies = {}
     for i = 1, numEnemies do
-        table.insert(enemies, { x = 400 + math.random(0, 200), y = math.random(0, 240) })
+        table.insert(enemies, { x = 400 + math.random(0, 200), y = math.random(0, 240), health = 3 })
     end
 end
 initializeEnemies()
@@ -53,6 +53,7 @@ local currentButtonIndex = 1
 local playerChoice = nil
 local enemyChoice = nil
 local resultText = ""
+local resultTimer = nil
 
 function pd.update()
     gfx.clear()
@@ -100,7 +101,7 @@ function pd.update()
                     table.remove(bullets, bulletIndex)
                     table.remove(enemies, enemyIndex)
                     score += 1
-                    table.insert(enemies, { x = 400 + math.random(0, 200), y = math.random(0, 240) })
+                    table.insert(enemies, { x = 400 + math.random(0, 200), y = math.random(0, 240), health = 3 }) -- New enemy starts with 3 health
                     break
                 end
             end
@@ -115,11 +116,14 @@ function pd.update()
         playerImage:draw(60, 100)
         enemyImage:draw(240, 100)
 
-        for i = 1, playerHealth do
-            heartImage:drawScaled(20 + (i - 1) * 25, 20, 0.25)
-        end
-        for i = 1, enemyHealth do
-            heartImage:drawScaled(240 + (i - 1) * 25, 20, 0.25)
+        local maxHearts = 3
+        for i = 1, maxHearts do
+            if i <= playerHealth then
+                heartImage:drawScaled(20 + (i - 1) * 25, 20, 0.25)
+            end
+            if i <= enemyHealth then
+                heartImage:drawScaled(240 + (i - 1) * 25, 20, 0.25)
+            end
         end
 
         for i, button in ipairs(buttons) do
@@ -141,7 +145,7 @@ function pd.update()
         end
     elseif gameState == "result" then
         if playerChoice == enemyChoice then
-            resultText = "It's a tie! Press A to continue"
+            resultText = "It's a tie!"
         elseif (playerChoice == 1 and enemyChoice == 2) or (playerChoice == 2 and enemyChoice == 3) or (playerChoice == 3 and enemyChoice == 1) then
             resultText = "You win! Press A to continue"
             enemyHealth -= 1
@@ -152,16 +156,18 @@ function pd.update()
 
         if enemyHealth <= 0 then
             resultText = "You defeated the enemy! Press A to continue"
-            gameState = "game"
-            initializeEnemies()
+            enemyHealth = 3 -- Reset health for new enemy
         elseif playerHealth <= 0 then
             resultText = "You were defeated! Press A to continue"
             gameState = "gameOver"
         end
 
         gfx.drawText(resultText, 100, 120)
-        if pd.buttonJustPressed(pd.kButtonA) then
-            gameState = (resultText:find("defeated") and "game") or "collision"
+        if resultTimer == nil then
+            resultTimer = pd.timer.new(3000, function()
+                resultTimer = nil
+                gameState = "collision"
+            end)
         end
     elseif gameState == "gameOver" then
         gfx.clear()
