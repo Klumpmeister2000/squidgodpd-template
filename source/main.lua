@@ -13,6 +13,7 @@ local gameState = "title" -- Possible states: "title", "game", "collision", "res
 local playerX = 40
 local playerY = 120
 local playerSpeed = 3
+local playerHealth = 100
 
 -- Score
 local score = 0
@@ -33,10 +34,17 @@ if not enemyImage then
     error("Failed to load enemy image: images/spaceworm.png")
 end
 
+-- Load heart sprite
+local heartImage = gfx.image.new("images/heart.png")
+if not heartImage then
+    error("Failed to load heart image: images/heart.png")
+end
+
 -- Enemies
 local enemies = {}
 local enemySpeed = 2
 local numEnemies = 5
+local enemyHealth = 100
 
 -- Initialize enemies
 local function initializeEnemies()
@@ -100,6 +108,13 @@ function pd.update()
             playerY += playerSpeed -- Move down
         end
 
+        -- Loop the player back onto the screen
+        if playerY < 0 then
+            playerY = 240 -- Move to the bottom of the screen
+        elseif playerY > 240 then
+            playerY = 0 -- Move to the top of the screen
+        end
+
         -- Shoot a bullet when A is pressed
         if pd.buttonJustPressed(pd.kButtonA) then
             table.insert(bullets, {x = playerX + 20, y = playerY + 10}) -- Spawn bullet near the player
@@ -123,37 +138,44 @@ function pd.update()
             playerImage:draw(playerX, playerY)
         end
 
-    -- Update enemy positions
-    for enemyIndex = #enemies, 1, -1 do
-    local enemy = enemies[enemyIndex]
-    enemy.x -= enemySpeed
-    if enemyImage ~= nil and enemy.x < -enemyImage.width then
-        enemy.x = 400 + math.random(0, 200)
-        enemy.y = math.random(0, 240)
-    end
-    if enemyImage ~= nil then
-        enemyImage:draw(enemy.x, enemy.y)
-    end
+        -- Update enemy positions
+        for enemyIndex = #enemies, 1, -1 do
+            local enemy = enemies[enemyIndex]
+            enemy.x -= enemySpeed
+            if enemyImage ~= nil and enemy.x < -enemyImage.width then
+                -- Respawn enemy when it moves off-screen
+                enemy.x = 400 + math.random(0, 200)
+                enemy.y = math.random(0, 240)
+            end
+            if enemyImage ~= nil then
+                enemyImage:draw(enemy.x, enemy.y)
+            end
 
-    -- Check for collision with bullets
-    for bulletIndex = #bullets, 1, -1 do
-        local bullet = bullets[bulletIndex]
-        if math.abs(bullet.x - enemy.x) < 64 / 2 and math.abs(bullet.y - enemy.y) < 64 / 2 then
-            -- Remove the bullet and the enemy
-            table.remove(bullets, bulletIndex)
-            table.remove(enemies, enemyIndex)
+            -- Check for collision with bullets
+            for bulletIndex = #bullets, 1, -1 do
+                local bullet = bullets[bulletIndex]
+                if math.abs(bullet.x - enemy.x) < 64 / 2 and math.abs(bullet.y - enemy.y) < 64 / 2 then
+                    -- Remove the bullet and the enemy
+                    table.remove(bullets, bulletIndex)
+                    table.remove(enemies, enemyIndex)
 
-            -- Increment the score
-            score += 1
-            break
+                    -- Increment the score
+                    score += 1
+
+                    -- Respawn a new enemy
+                    table.insert(enemies, {
+                        x = 400 + math.random(0, 200),
+                        y = math.random(0, 240)
+                    })
+                    break
+                end
+            end
+
+            -- Check for collision with player
+            if enemyImage ~= nil and math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
+                gameState = "collision"
+            end
         end
-    end
-
-    -- Check for collision with player
-    if enemyImage ~= nil and math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
-        gameState = "collision"
-    end
-end
 
         -- Display the score
         gfx.drawText("Score: " .. score, 300, 10)
@@ -165,7 +187,15 @@ end
         if enemyImage ~= nil then
             enemyImage:draw(240, 100) -- Right center
         end
-        
+
+        -- Display health bars as hearts
+        for i = 1, playerHealth do
+            heartImage:draw(20 + (i - 1) * 20, 20) -- Draw player hearts
+        end
+        for i = 1, enemyHealth do
+            heartImage:draw(240 + (i - 1) * 20, 20) -- Draw enemy hearts
+        end
+
         -- Display buttons
         for i, button in ipairs(buttons) do
             if button.selected then
@@ -188,46 +218,72 @@ end
             local textWidth, textHeight = gfx.getTextSize(button.text)
             gfx.drawText(button.text, button.x + (button.width - textWidth) / 2, button.y + (button.height - textHeight) / 2)
         end
-        
+
         -- Handle d-pad input for button selection
         if pd.buttonJustPressed(pd.kButtonLeft) then
             currentButtonIndex = math.max(1, currentButtonIndex - 1)
         elseif pd.buttonJustPressed(pd.kButtonRight) then
             currentButtonIndex = math.min(#buttons, currentButtonIndex + 1)
         end
-        
+
         -- Handle A button input for selection
         if pd.buttonJustPressed(pd.kButtonA) then
             playerChoice = currentButtonIndex
             enemyChoice = math.random(1, #buttons)
             gameState = "result"
         end
-    -- Result logic
-elseif gameState == "result" then
-    -- Determine the winner
-    if playerChoice == enemyChoice then
-        resultText = "It's a tie! Press A to continue"
-    elseif (playerChoice == 1 and enemyChoice == 2) or -- Gun beats Sword
-           (playerChoice == 2 and enemyChoice == 3) or -- Sword beats Beam
-           (playerChoice == 3 and enemyChoice == 1) then -- Beam beats Gun
-        resultText = "You win! Press A to continue"
-    else
-        resultText = "You lose! Press A to retry"
-    end
+    elseif gameState == "result" then
+        -- Determine the winner
+        if playerChoice == enemyChoice then
+            resultText = "It's a tie! Press A to continue"
+        elseif (playerChoice == 1 and enemyChoice == 2) or -- Gun beats Sword
+               (playerChoice == 2 and enemyChoice == 3) or -- Sword beats Beam
+               (playerChoice == 3 and enemyChoice == 1) then -- Beam beats Gun
+            resultText = "You win! Press A to continue"
+            enemyHealth -= 1 -- Decrease enemy health
+        else
+            resultText = "You lose! Press A to retry"
+            playerHealth -= 1 -- Decrease player health
+        end
 
-    -- Display result
-    gfx.drawText(resultText, 100, 120)
+        -- Check for victory or defeat
+        if enemyHealth <= 0 then
+            resultText = "You defeated the enemy! Press A to continue"
+            gameState = "game" -- Return to the side-scroller game
+            playerHealth = 3 -- Reset player health
+            enemyHealth = 3 -- Reset enemy health
+        elseif playerHealth <= 0 then
+            resultText = "You were defeated! Press A to continue"
+            gameState = "gameOver" -- Transition to the Game Over screen
+        end
+
+        -- Display result
+        gfx.drawText(resultText, 100, 120)
 
         -- Wait for the player to press A to continue
         if pd.buttonJustPressed(pd.kButtonA) then
-            if resultText == "You win! Press A to continue" then
-                initializeEnemies() -- Reinitialize enemies
-                gameState = "game" -- Return to the game loop
-            elseif resultText == "It's a tie! Press A to continue" then
+            if resultText == "You win! Press A to continue" or resultText == "It's a tie! Press A to continue" then
                 gameState = "collision" -- Retry the collision screen
-            elseif resultText == "You lose! Press A to retry" then
-                gameState = "retry" -- Go to retry screen
+            elseif resultText == "You defeated the enemy! Press A to continue" then
+                gameState = "game" -- Return to the side-scroller game
+            elseif resultText == "You were defeated! Press A to continue" then
+                gameState = "gameOver" -- Transition to the Game Over screen
             end
         end
-            end -- Close the pd.update function
-        end -- Add missing end for pd.update
+    elseif gameState == "gameOver" then
+        -- Display Game Over screen
+        gfx.clear()
+        gfx.drawText("Game Over", 150, 100)
+        gfx.drawText("Press A to Restart", 120, 140)
+
+        -- Handle A button input to restart the game
+        if pd.buttonJustPressed(pd.kButtonA) then
+            -- Reset game variables
+            playerHealth = 3
+            enemyHealth = 3
+            score = 0
+            initializeEnemies() -- Reinitialize enemies
+            gameState = "title" -- Return to the title screen
+        end
+    end
+end -- Close the pd.update function
