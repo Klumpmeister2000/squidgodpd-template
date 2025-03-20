@@ -54,6 +54,7 @@ local playerChoice = nil
 local enemyChoice = nil
 local resultText = ""
 local resultTimer = nil
+local resultDisplayed = false
 
 function pd.update()
     gfx.clear()
@@ -144,18 +145,37 @@ function pd.update()
             gameState = "result"
         end
     elseif gameState == "result" then
+        playerImage:draw(60, 100)
+        enemyImage:draw(240, 100)
+
+        local maxHearts = 3
+        for i = 1, maxHearts do
+            if i <= playerHealth then
+                heartImage:drawScaled(20 + (i - 1) * 32, 20, 0.1)
+            end
+            if i <= enemyHealth then
+                heartImage:drawScaled(240 + (i - 1) * 32, 20, 0.1)
+            end
+        end
+
+        gfx.drawText(resultText, 150, 80) -- Display between player and enemy
+
         -- Ensure result text is only set once per round
-        if resultText == "" then
+        if resultText == "" or not resultDisplayed then
+            resultDisplayed = true
             if playerChoice == enemyChoice then
                 resultText = "Try again!"
             elseif (playerChoice == 1 and enemyChoice == 2) or (playerChoice == 2 and enemyChoice == 3) or (playerChoice == 3 and enemyChoice == 1) then
                 resultText = "Nice hit!"
                 enemyHealth -= 1
                 -- Make enemy shake properly
-                local shakeTimer = pd.timer.new(300, function() end)
+                local shakeAmount = 3
+                local shakeTimer = pd.timer.new(50, function()
+                    enemyImage:draw(240 + (math.random(-shakeAmount, shakeAmount)), 100 + (math.random(-shakeAmount, shakeAmount)))
+                end)
                 shakeTimer.repeats = 5
                 shakeTimer.timerEndedCallback = function()
-                    enemyImage:draw(240, 100)
+                    enemyImage:draw(240, 100) -- Reset enemy position
                 end
             else
                 resultText = "Ouch!"
@@ -163,9 +183,8 @@ function pd.update()
             end
         end
 
-        gfx.drawText(resultText, 100, 120)
-
         if pd.buttonJustPressed(pd.kButtonA) then
+            resultDisplayed = false
             if enemyHealth <= 0 then
                 enemyHealth = 3
                 resultText = "" -- Reset text
