@@ -119,10 +119,10 @@ function pd.update()
         local maxHearts = 3
         for i = 1, maxHearts do
             if i <= playerHealth then
-                heartImage:drawScaled(20 + (i - 1) * 25, 20, 0.25)
+                heartImage:drawScaled(20 + (i - 1) * 32, 20, 0.1)
             end
             if i <= enemyHealth then
-                heartImage:drawScaled(240 + (i - 1) * 25, 20, 0.25)
+                heartImage:drawScaled(240 + (i - 1) * 32, 20, 0.1)
             end
         end
 
@@ -144,19 +144,38 @@ function pd.update()
             gameState = "result"
         end
     elseif gameState == "result" then
-        if playerChoice == enemyChoice then
-            resultText = "Try again!"
-        elseif (playerChoice == 1 and enemyChoice == 2) or (playerChoice == 2 and enemyChoice == 3) or (playerChoice == 3 and enemyChoice == 1) then
-            resultText = "Nice hit!"
-            enemyHealth -= 1
-            -- Make enemy shake
-            for i = 1, 5 do
-                enemyImage:draw(240 + (i % 2 == 0 and 2 or -2), 100)
-                pd.timer.performAfterDelay(50, function() end)
+        -- Ensure result text is only set once per round
+        if resultText == "" then
+            if playerChoice == enemyChoice then
+                resultText = "Try again!"
+            elseif (playerChoice == 1 and enemyChoice == 2) or (playerChoice == 2 and enemyChoice == 3) or (playerChoice == 3 and enemyChoice == 1) then
+                resultText = "Nice hit!"
+                enemyHealth -= 1
+                -- Make enemy shake properly
+                local shakeTimer = pd.timer.new(300, function() end)
+                shakeTimer.repeats = 5
+                shakeTimer.timerEndedCallback = function()
+                    enemyImage:draw(240, 100)
+                end
+            else
+                resultText = "Ouch!"
+                playerHealth -= 1
             end
-        else
-            resultText = "Ouch!"
-            playerHealth -= 1
+        end
+
+        gfx.drawText(resultText, 100, 120)
+
+        if pd.buttonJustPressed(pd.kButtonA) then
+            if enemyHealth <= 0 then
+                enemyHealth = 3
+                resultText = "" -- Reset text
+                gameState = "game" -- Return to shooter game
+            elseif playerHealth <= 0 then
+                gameState = "gameOver"
+            else
+                resultText = "" -- Reset text for next round
+                gameState = "collision" -- Continue battle
+            end
         end
 
         if enemyHealth <= 0 then
@@ -165,19 +184,6 @@ function pd.update()
         elseif playerHealth <= 0 then
             resultText = "You were defeated! Press A to continue"
             gameState = "gameOver"
-        end
-
-        gfx.drawText(resultText, 100, 120)
-
-        if pd.buttonJustPressed(pd.kButtonA) then
-            if enemyHealth <= 0 then
-                enemyHealth = 3
-                gameState = "game" -- Return to shooter game
-            elseif playerHealth <= 0 then
-                gameState = "gameOver"
-            else
-                gameState = "collision" -- Continue battle
-            end
         end
     elseif gameState == "gameOver" then
         gfx.clear()
