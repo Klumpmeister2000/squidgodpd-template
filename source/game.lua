@@ -1,8 +1,33 @@
 local game = {} -- Ensure 'game' is defined as a table
 
+-- Define player speed
+local playerSpeed = 2
+
 local pd = playdate
 local gfx = pd.graphics
 local spr = gfx.sprite
+
+-- Initialize player sprite
+local player = spr.new()
+local playerImage = gfx.image.new("images/spaceman.png")
+assert(playerImage, "Error: Could not load player image at 'images/spaceman.png'")
+player:setImage(playerImage) -- Ensure the image path is correct
+player:moveTo(200, 120) -- Initial position
+player:add()
+local playerX, playerY = 200, 120 -- Track player position
+
+-- Initialize enemies
+local enemies = {}
+local enemySpeed = 1 -- Define enemy speed
+for i = 1, 5 do
+    local enemy = spr.new()
+    local enemyImage = gfx.image.new("images/spaceworm.png")
+    assert(enemyImage, "Error: Could not load enemy image at 'images/spaceworm.png'")
+    enemy:setImage(enemyImage) -- Ensure the image path is correct
+    enemy:moveTo(400 + math.random(0, 200), math.random(0, 240))
+    enemy:add()
+    table.insert(enemies, enemy)
+end
 
 function game.update()
     gfx.clear()

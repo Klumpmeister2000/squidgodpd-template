@@ -26,6 +26,10 @@ local bulletSpeed = 5
 local playerImage = gfx.image.new("images/spaceman.png")
 local enemyImage = gfx.image.new("images/spaceworm.png")
 local heartImage = gfx.image.new("images/heart.png")
+local healthboxImage = gfx.image.new("images/healthbox.png")
+local healthbox = nil
+
+local combatEnemy = { x = 240, y = 100, isShaking = false } -- New global combat enemy table
 
 -- Enemies
 local enemies = {}
@@ -37,10 +41,37 @@ local enemyHealth = 3
 local function initializeEnemies()
     enemies = {}
     for i = 1, numEnemies do
-        table.insert(enemies, { x = 400 + math.random(0, 200), y = math.random(0, 240), health = 3 })
+        table.insert(enemies, { x = 400 + math.random(0, 200), y = math.random(0, 240), health = 3, isShaking = false })
     end
 end
 initializeEnemies()
+
+local healthboxSpawnTimer = playdate.timer.new(2000)  -- spawn every 2 seconds for testing
+healthboxSpawnTimer.completionCallback = function(timer)
+    if healthbox == nil then
+        healthbox = { x = math.random(50, 350), y = math.random(20, 220) }
+    end
+    timer.duration = 2000  -- keep the interval at 2 seconds
+    timer:reset()
+end
+
+-- Function to shake an enemy sprite with a callback when complete
+local function shakeEnemy(enemy, duration, shakeRange, onComplete)
+    local originalX, originalY = enemy.x, enemy.y
+    local shakeTimer = playdate.timer.new(duration)
+    
+    shakeTimer.updateCallback = function(timer)
+        enemy.x = originalX + math.random(-shakeRange, shakeRange)
+        enemy.y = originalY + math.random(-shakeRange, shakeRange)
+    end
+    
+    shakeTimer.completionCallback = function(timer)
+        enemy.x = originalX
+        enemy.y = originalY
+        enemy.isShaking = false
+        if onComplete then onComplete() end
+    end
+end
 
 -- Buttons for battle scene
 local buttons = {
@@ -86,12 +117,16 @@ function pd.update()
             end
         end
 
-        playerImage:draw(playerX, playerY)
+        if playerImage then
+            playerImage:draw(playerX, playerY)
+        end
         
         local hitboxOffsetY = 20 -- Lower hitbox further
         for enemyIndex = #enemies, 1, -1 do
             local enemy = enemies[enemyIndex]
-            enemy.x -= enemySpeed
+            if not enemy.isShaking then
+                enemy.x -= enemySpeed
+            end
             if enemy.x < -enemyImage.width then
                 enemy.x = 400 + math.random(0, 200)
                 enemy.y = math.random(0, 240)
@@ -102,8 +137,8 @@ function pd.update()
                 if math.abs(bullets[bulletIndex].x - enemy.x) < 32 and math.abs(bullets[bulletIndex].y - (enemy.y + hitboxOffsetY)) < 32 then
                     table.remove(bullets, bulletIndex)
                     table.remove(enemies, enemyIndex)
-                    score += 1
-                    table.insert(enemies, { x = 400 + math.random(0, 200), y = math.random(0, 240), health = 3 }) -- New enemy starts with 3 health
+                    score = score + 1
+                    table.insert(enemies, { x = 400 + math.random(0, 200), y = math.random(0, 240), health = 3, isShaking = false })
                     break
                 end
             end
@@ -112,19 +147,64 @@ function pd.update()
                 gameState = "combat"
             end
         end
+
+        if healthbox then
+            -- Move the healthbox left along with enemies
+            healthbox.x = healthbox.x - enemySpeed
+            
+            -- If the healthbox moves off screen, remove it
+            if healthbox.x < -healthboxImage.width then
+                healthbox = nil
+            else
+                -- Draw the healthbox
+                healthboxImage:draw(healthbox.x, healthbox.y)
+                
+                -- Debug: Draw text above the healthbox to indicate its presence
+                gfx.drawText("HB", healthbox.x, healthbox.y - 10)
+                
+                -- Check collision with the player
+                if math.abs(playerX - healthbox.x) < healthboxImage.width and math.abs(playerY - healthbox.y) < healthboxImage.height then
+                    playerHealth = 3  -- Refresh player's health to full
+                    healthbox = nil -- Remove the healthbox after pickup
+                end
+            end
+        end
         
+        -- Debug message for healthbox position
+        if healthbox then
+            gfx.drawText(string.format("Healthbox at (%.0f, %.0f)", healthbox.x, healthbox.y), 10, 220)
+        end
+
         gfx.drawText("Score: " .. score, 300, 10)
     elseif gameState == "combat" then
-        playerImage:draw(60, 100)
-        enemyImage:draw(240, 100)
+        if playerImage then
+            if playerImage then
+                playerImage:draw(60, 100)
+            end
+        end
+        if combatEnemy then
+            if combatEnemy then
+                if combatEnemy then
+                    enemyImage:draw(combatEnemy.x, combatEnemy.y) -- Updated enemy drawing
+                end
+            end
+        end
 
         local maxHearts = 3
         for i = 1, maxHearts do
             if i <= playerHealth then
-                heartImage:drawScaled(20 + (i - 1) * 32, 20, 0.1)
+                if heartImage then
+                    if heartImage then
+                        if heartImage then
+                            heartImage:drawScaled(20 + (i - 1) * 32, 20, 0.1)
+                        end
+                    end
+                end
             end
             if i <= enemyHealth then
-                heartImage:drawScaled(240 + (i - 1) * 32, 20, 0.1)
+                if heartImage then
+                    heartImage:drawScaled(240 + (i - 1) * 32, 20, 0.1)
+                end
             end
         end
 
@@ -147,7 +227,7 @@ function pd.update()
         end
     elseif gameState == "result" then
         playerImage:draw(60, 100)
-        enemyImage:draw(240, 100)
+        enemyImage:draw(combatEnemy.x, combatEnemy.y) -- Updated enemy drawing
 
         local maxHearts = 3
         for i = 1, maxHearts do
@@ -169,6 +249,8 @@ function pd.update()
                 enemyHealth -= 1
                 if enemyHealth > 0 then
                     resultText = "Nice hit!"
+                    combatEnemy.isShaking = true
+                    shakeEnemy(combatEnemy, 500, 5, function() end) -- Added shake animation for a "Nice hit!"
                 else
                     resultText = "You defeated the enemy!"
                 end
