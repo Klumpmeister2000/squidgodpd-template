@@ -7,7 +7,7 @@ local pd = playdate
 local gfx = pd.graphics
 
 -- Game state
-local gameState = "title" -- Possible states: "title", "game", "collision", "result", "retry", "gameOver"
+local gameState = "title" -- Possible states: "title", "game", "combat", "result", "retry", "gameOver"
 
 -- Player 
 local playerX = 40
@@ -88,6 +88,7 @@ function pd.update()
 
         playerImage:draw(playerX, playerY)
         
+        local hitboxOffsetY = 20 -- Lower hitbox further
         for enemyIndex = #enemies, 1, -1 do
             local enemy = enemies[enemyIndex]
             enemy.x -= enemySpeed
@@ -98,7 +99,7 @@ function pd.update()
             enemyImage:draw(enemy.x, enemy.y)
             
             for bulletIndex = #bullets, 1, -1 do
-                if math.abs(bullets[bulletIndex].x - enemy.x) < 32 and math.abs(bullets[bulletIndex].y - enemy.y) < 32 then
+                if math.abs(bullets[bulletIndex].x - enemy.x) < 32 and math.abs(bullets[bulletIndex].y - (enemy.y + hitboxOffsetY)) < 32 then
                     table.remove(bullets, bulletIndex)
                     table.remove(enemies, enemyIndex)
                     score += 1
@@ -107,13 +108,13 @@ function pd.update()
                 end
             end
             
-            if math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - enemy.y) < enemyImage.height then
-                gameState = "collision"
+            if math.abs(playerX - enemy.x) < enemyImage.width and math.abs(playerY - (enemy.y + hitboxOffsetY)) < enemyImage.height then
+                gameState = "combat"
             end
         end
         
         gfx.drawText("Score: " .. score, 300, 10)
-    elseif gameState == "collision" then
+    elseif gameState == "combat" then
         playerImage:draw(60, 100)
         enemyImage:draw(240, 100)
 
@@ -160,22 +161,16 @@ function pd.update()
 
         gfx.drawText(resultText, 150, 80) -- Display between player and enemy
 
-        -- Ensure result text is only set once per round
-        if resultText == "" or not resultDisplayed then
+        if not resultDisplayed then
             resultDisplayed = true
             if playerChoice == enemyChoice then
                 resultText = "Try again!"
             elseif (playerChoice == 1 and enemyChoice == 2) or (playerChoice == 2 and enemyChoice == 3) or (playerChoice == 3 and enemyChoice == 1) then
-                resultText = "Nice hit!"
                 enemyHealth -= 1
-                -- Make enemy shake properly
-                local shakeAmount = 3
-                local shakeTimer = pd.timer.new(50, function()
-                    enemyImage:draw(240 + (math.random(-shakeAmount, shakeAmount)), 100 + (math.random(-shakeAmount, shakeAmount)))
-                end)
-                shakeTimer.repeats = 5
-                shakeTimer.timerEndedCallback = function()
-                    enemyImage:draw(240, 100) -- Reset enemy position
+                if enemyHealth > 0 then
+                    resultText = "Nice hit!"
+                else
+                    resultText = "You defeated the enemy!"
                 end
             else
                 resultText = "Ouch!"
@@ -184,23 +179,22 @@ function pd.update()
         end
 
         if pd.buttonJustPressed(pd.kButtonA) then
-            resultDisplayed = false
-            if enemyHealth <= 0 then
-                enemyHealth = 3
-                resultText = "" -- Reset text
-                gameState = "game" -- Return to shooter game
+            resultText = "" -- Reset text
+            resultDisplayed = false -- Ensure text updates next round
+
+            if enemyHealth > 0 and playerHealth > 0 then
+                gameState = "combat" -- Resume combat round
+            elseif enemyHealth <= 0 then
+                gameState = "game" -- Return to main game loop
+                enemyHealth = 3 -- Reset enemy health
+                score += 1 -- Increment score for defeating an enemy
+                initializeEnemies() -- Ensure new enemies spawn
             elseif playerHealth <= 0 then
                 gameState = "gameOver"
-            else
-                resultText = "" -- Reset text for next round
-                gameState = "collision" -- Continue battle
             end
         end
 
-        if enemyHealth <= 0 then
-            resultText = "You defeated the enemy! Press A to continue"
-            enemyHealth = 3 -- Reset health for new enemy
-        elseif playerHealth <= 0 then
+        if playerHealth <= 0 then
             resultText = "You were defeated! Press A to continue"
             gameState = "gameOver"
         end
