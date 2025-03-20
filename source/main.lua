@@ -145,12 +145,17 @@ function pd.update()
         end
     elseif gameState == "result" then
         if playerChoice == enemyChoice then
-            resultText = "It's a tie!"
+            resultText = "Try again!"
         elseif (playerChoice == 1 and enemyChoice == 2) or (playerChoice == 2 and enemyChoice == 3) or (playerChoice == 3 and enemyChoice == 1) then
-            resultText = "You win! Press A to continue"
+            resultText = "Nice hit!"
             enemyHealth -= 1
+            -- Make enemy shake
+            for i = 1, 5 do
+                enemyImage:draw(240 + (i % 2 == 0 and 2 or -2), 100)
+                pd.timer.performAfterDelay(50, function() end)
+            end
         else
-            resultText = "You lose! Press A to retry"
+            resultText = "Ouch!"
             playerHealth -= 1
         end
 
@@ -163,11 +168,16 @@ function pd.update()
         end
 
         gfx.drawText(resultText, 100, 120)
-        if resultTimer == nil then
-            resultTimer = pd.timer.new(3000, function()
-                resultTimer = nil
-                gameState = "collision"
-            end)
+
+        if pd.buttonJustPressed(pd.kButtonA) then
+            if enemyHealth <= 0 then
+                enemyHealth = 3
+                gameState = "game" -- Return to shooter game
+            elseif playerHealth <= 0 then
+                gameState = "gameOver"
+            else
+                gameState = "collision" -- Continue battle
+            end
         end
     elseif gameState == "gameOver" then
         gfx.clear()
